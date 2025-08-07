@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Greetings CSI3450 Database Management and Design</title>
+  <!-- 
+      Mermaid documentation:
+     https://mermaid.js.org/syntax/entityRelationshipDiagram.html
+  -->
+  
+  <!-- Load Mermaid CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.css">
+
+  <link rel="stylesheet" href="css/diag.css">
+
+</head>
+<body>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs' 
+  </script>  
+
+  <!-- Initialize Mermaid -->
+  <script>
+    // Use the 'mermaid' global object to initialize the diagram
+    mermaid.initialize({
+      startOnLoad: true,
+      sequence: { showSequenceNumbers: true },
+    });
+</script>
+
+<section>
+
+<h1 style="text-align: center;">DVWA ERD</h1>
+
+
+
+<!-- 
+Sample taken from DatabaseAnswers.org 
+https://datamodels.databases.biz
+-->
+ 
+ <div class="mermaid" style="text-align: center">
+
+  ---
+  title: DVWA ERD - Martial Arts R US
+---
+erDiagram
+    STUDENT {
+        int    StudentNo PK
+        string FirstName
+        string LastName
+        date   DOB
+        date   JoinDate
+    }
+    INSTRUCTOR {
+        int    StudentNo PK, FK
+        date   InstructorStartDate
+        string InstructorStatus
+    }
+    CLASS {
+        int    ClassID PK
+        string Level
+        string DayOfWeek
+        time   StartTime
+        string Location
+    }
+    CLASS_MEETING {
+        int    MeetingID PK
+        int    ClassID  FK
+        date   MeetingDate
+    }
+    ATTENDANCE {
+        int    MeetingID PK, FK
+        int    StudentNo PK, FK
+    }
+    TEACHING_ASSIGNMENT {
+        int    MeetingID PK, FK
+        int    StudentNo PK, FK
+        string Role  "Head/Assistant"
+    }
+    RANK {
+        string RankName PK
+        string BeltColor
+    }
+    RANK_REQUIREMENT {
+        int    RequirementID PK
+        string RankName  FK
+        string RequirementDescription
+    }
+    STUDENT_RANK {
+        int    StudentNo PK, FK
+        string RankName PK, FK
+        date   DateAwarded
+    }
+
+    STUDENT     ||--o|  INSTRUCTOR          : is
+    INSTRUCTOR  ||--o{  CLASS               : "assigned to"
+    CLASS       ||--|{  CLASS_MEETING       : "occurs at"
+    CLASS_MEETING ||--o{ ATTENDANCE         : records
+    STUDENT     }|--|{  ATTENDANCE          : attends
+    CLASS_MEETING ||--o{ TEACHING_ASSIGNMENT: "staffed by"
+    INSTRUCTOR  ||--o{  TEACHING_ASSIGNMENT : teaches
+    RANK        ||--|{  RANK_REQUIREMENT    : has
+    STUDENT     }|--|{  STUDENT_RANK        : earns
+    RANK        ||--o{  STUDENT_RANK        : "achieved by"
+</div>
+ 
+<br>
+
+
+
+ <div class="mermaid" style="text-align: center">
+sequenceDiagram
+    
+
+
+</div>
+
+
+  
+</section>
+
+</body>
+</html>
