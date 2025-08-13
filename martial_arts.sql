@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 11, 2025 at 02:07 PM
+-- Generation Time: Aug 13, 2025 at 04:38 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -141,14 +141,15 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_get_student_profile` (IN `p_stud
   WHERE a.student_no=p_student_no AND m.meeting_date BETWEEN p_from AND p_to;
 END$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_promote_student` (IN `p_student_no` INT UNSIGNED, IN `p_rank_name` VARCHAR(50), IN `p_date_awarded` DATE)   BEGIN
-  IF NOT EXISTS (SELECT 1 FROM belt_rank WHERE rank_name=p_rank_name) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Rank does not exist in BELT_RANK.';
-  END IF;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_promote_student` (IN `p_student_no` INT UNSIGNED, IN `p_rank_name` VARCHAR(50), IN `p_belt_color` VARCHAR(30), IN `p_date_awarded` DATE)   BEGIN
+  -- If rank does not exist, create it. This ties rank creation to the first promotion.
+  INSERT IGNORE INTO belt_rank(rank_name, belt_color)
+  VALUES(p_rank_name, p_belt_color);
 
-  INSERT INTO student_rank(student_no,rank_name,date_awarded)
-  VALUES(p_student_no,p_rank_name,p_date_awarded)
-  ON DUPLICATE KEY UPDATE date_awarded=VALUES(date_awarded);
+  -- Award the rank to the student
+  INSERT INTO student_rank(student_no, rank_name, date_awarded)
+  VALUES(p_student_no, p_rank_name, p_date_awarded)
+  ON DUPLICATE KEY UPDATE date_awarded = VALUES(date_awarded);
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_reassign_class_head` (IN `p_class_id` INT UNSIGNED, IN `p_new_instructor_no` INT UNSIGNED, IN `p_effective_from` DATE)   BEGIN
@@ -325,6 +326,24 @@ CREATE TABLE `rank_requirement` (
   `requirement_description` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Triggers `rank_requirement`
+--
+DELIMITER $$
+CREATE TRIGGER `trg_prevent_last_req_delete` BEFORE DELETE ON `rank_requirement` FOR EACH ROW BEGIN
+    -- Check if the rank is not 'White Belt'
+    IF OLD.rank_name <> 'White Belt' THEN
+        -- Count how many requirements this rank has
+        IF (SELECT COUNT(*) FROM rank_requirement WHERE rank_name = OLD.rank_name) <= 1 THEN
+            -- If it's one or less (meaning this is the last one), signal an error
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'Cannot delete the last requirement for a rank. All ranks (except White Belt) must have at least one requirement.';
+        END IF;
+    END IF;
+END
+$$
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -350,6 +369,21 @@ CREATE TABLE `student_rank` (
   `rank_name` varchar(50) NOT NULL,
   `date_awarded` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `student_rank`
+--
+DELIMITER $$
+CREATE TRIGGER `trg_prevent_orphan_rank` BEFORE DELETE ON `student_rank` FOR EACH ROW BEGIN
+    -- Count how many students hold this rank
+    IF (SELECT COUNT(*) FROM student_rank WHERE rank_name = OLD.rank_name) <= 1 THEN
+        -- If this is the last student with this rank, block the deletion
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Cannot remove rank from this student as they are the last person to hold it. This would orphan the rank.';
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
