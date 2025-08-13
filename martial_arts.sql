@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 13, 2025 at 04:38 PM
+-- Generation Time: Aug 13, 2025 at 05:24 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -171,6 +171,25 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_reassign_class_head` (IN `p_clas
     AND ta.role = 'HEAD';
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_remove_student` (IN `p_student_no` INT UNSIGNED)   BEGIN
+  -- This procedure removes a student and all their related data.
+  -- It includes a safeguard to prevent removing a student who is currently
+  -- assigned as the Head Instructor of a class.
+
+  -- Check if the student is assigned as a head instructor to any class.
+  IF EXISTS (SELECT 1 FROM class WHERE assigned_instructor_no = p_student_no) THEN
+    -- If they are, signal an error and prevent deletion.
+    SIGNAL SQLSTATE '45000' 
+      SET MESSAGE_TEXT = 'Cannot remove student. They are assigned as the Head Instructor for one or more classes. Please reassign the class(es) first.';
+  ELSE
+    -- If they are not a head instructor, proceed with deletion.
+    -- The ON DELETE CASCADE constraints in the database will automatically remove
+    -- their related records from attendance, student_rank, and instructor tables.
+    DELETE FROM student WHERE student_no = p_student_no;
+  END IF;
+
+END$$
+
 CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_schedule_meetings_for_range` (IN `p_class_id` INT UNSIGNED, IN `p_start` DATE, IN `p_end` DATE)   BEGIN
   DECLARE v_day ENUM('Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday');
   DECLARE v_cur DATE;
@@ -216,6 +235,56 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_upsert_location` (IN `p_room_lab
   FROM location WHERE room_label = p_room_label;
 END$$
 
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_create_instructor` (IN `p_student_no` INT UNSIGNED, IN `p_start_date` DATE, IN `p_status` ENUM('COMPENSATED','VOLUNTEER'))   BEGIN
+  -- Check if the student already exists as an instructor
+  IF EXISTS (SELECT 1 FROM instructor WHERE student_no = p_student_no) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'This student is already an instructor.';
+  ELSE
+    -- Insert the new instructor record
+    INSERT INTO instructor(student_no, instructor_start_date, instructor_status)
+    VALUES(p_student_no, p_start_date, p_status);
+  END IF;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_add_rank_requirement` (IN `p_rank_name` VARCHAR(50), IN `p_requirement_description` TEXT)   BEGIN
+    -- Add a new requirement to a specific rank
+    INSERT INTO rank_requirement(rank_name, requirement_description)
+    VALUES(p_rank_name, p_requirement_description);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_remove_rank_requirement` (IN `p_requirement_id` INT UNSIGNED)   BEGIN
+    -- This procedure will be called by the front-end.
+    -- The actual deletion logic is enforced by the `trg_prevent_last_req_delete` trigger.
+    DELETE FROM rank_requirement WHERE requirement_id = p_requirement_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_get_rank_details` (IN `p_rank_name` VARCHAR(50))   BEGIN
+  -- Get rank info
+  SELECT rank_name, belt_color FROM belt_rank WHERE rank_name = p_rank_name;
+
+  -- Get rank requirements
+  SELECT requirement_id, requirement_description
+  FROM rank_requirement
+  WHERE rank_name = p_rank_name
+  ORDER BY requirement_id;
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_get_meeting_details` (IN `p_meeting_id` INT UNSIGNED)   BEGIN
+  SELECT
+    m.meeting_date,
+    c.level,
+    c.start_time,
+    l.room_label,
+    s.first_name,
+    s.last_name
+  FROM class_meeting m
+  JOIN class c ON m.class_id = c.class_id
+  JOIN location l ON c.location_id = l.location_id
+  JOIN instructor i ON c.assigned_instructor_no = i.student_no
+  JOIN student s ON i.student_no = s.student_no
+  WHERE m.meeting_id = p_meeting_id;
+END$$
+
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -228,6 +297,13 @@ CREATE TABLE `attendance` (
   `meeting_id` int(10) UNSIGNED NOT NULL,
   `student_no` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `attendance`
+--
+
+INSERT INTO `attendance` (`meeting_id`, `student_no`) VALUES
+(1, 1);
 
 -- --------------------------------------------------------
 
@@ -245,6 +321,8 @@ CREATE TABLE `belt_rank` (
 --
 
 INSERT INTO `belt_rank` (`rank_name`, `belt_color`) VALUES
+('Black Belt', 'Black'),
+('Brown Belt', 'Brown'),
 ('White Belt', 'White');
 
 -- --------------------------------------------------------
@@ -262,6 +340,14 @@ CREATE TABLE `class` (
   `assigned_instructor_no` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `class`
+--
+
+INSERT INTO `class` (`class_id`, `level`, `day_of_week`, `start_time`, `location_id`, `assigned_instructor_no`) VALUES
+(1, 'Beginner', 'Monday', '15:30:00', 1, 1),
+(2, 'Advanced', 'Wednesday', '21:45:00', 2, 1);
+
 -- --------------------------------------------------------
 
 --
@@ -273,6 +359,14 @@ CREATE TABLE `class_meeting` (
   `class_id` int(10) UNSIGNED NOT NULL,
   `meeting_date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `class_meeting`
+--
+
+INSERT INTO `class_meeting` (`meeting_id`, `class_id`, `meeting_date`) VALUES
+(1, 2, '2025-08-13'),
+(2, 2, '2025-08-20');
 
 --
 -- Triggers `class_meeting`
@@ -303,6 +397,13 @@ CREATE TABLE `instructor` (
   `instructor_status` enum('COMPENSATED','VOLUNTEER') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `instructor`
+--
+
+INSERT INTO `instructor` (`student_no`, `instructor_start_date`, `instructor_status`) VALUES
+(1, '2025-08-13', 'VOLUNTEER');
+
 -- --------------------------------------------------------
 
 --
@@ -313,6 +414,14 @@ CREATE TABLE `location` (
   `location_id` int(10) UNSIGNED NOT NULL,
   `room_label` varchar(64) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `location`
+--
+
+INSERT INTO `location` (`location_id`, `room_label`) VALUES
+(1, '1'),
+(2, '2');
 
 -- --------------------------------------------------------
 
@@ -358,6 +467,13 @@ CREATE TABLE `student` (
   `join_date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `student`
+--
+
+INSERT INTO `student` (`student_no`, `first_name`, `last_name`, `dob`, `join_date`) VALUES
+(1, 'Mark', 'Georgi', '2025-08-04', '2025-08-12');
+
 -- --------------------------------------------------------
 
 --
@@ -369,6 +485,13 @@ CREATE TABLE `student_rank` (
   `rank_name` varchar(50) NOT NULL,
   `date_awarded` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `student_rank`
+--
+
+INSERT INTO `student_rank` (`student_no`, `rank_name`, `date_awarded`) VALUES
+(1, 'Black Belt', '2025-08-12');
 
 --
 -- Triggers `student_rank`
@@ -397,6 +520,14 @@ CREATE TABLE `teaching_assignment` (
   `role` enum('HEAD','ASSISTANT') NOT NULL,
   `head_meeting_id` int(10) UNSIGNED GENERATED ALWAYS AS (case when `role` = 'HEAD' then `meeting_id` else NULL end) STORED
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `teaching_assignment`
+--
+
+INSERT INTO `teaching_assignment` (`meeting_id`, `student_no`, `role`) VALUES
+(1, 1, 'HEAD'),
+(2, 1, 'HEAD');
 
 --
 -- Triggers `teaching_assignment`
@@ -511,19 +642,19 @@ ALTER TABLE `teaching_assignment`
 -- AUTO_INCREMENT for table `class`
 --
 ALTER TABLE `class`
-  MODIFY `class_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `class_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `class_meeting`
 --
 ALTER TABLE `class_meeting`
-  MODIFY `meeting_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `meeting_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `location`
 --
 ALTER TABLE `location`
-  MODIFY `location_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `location_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `rank_requirement`
@@ -535,7 +666,7 @@ ALTER TABLE `rank_requirement`
 -- AUTO_INCREMENT for table `student`
 --
 ALTER TABLE `student`
-  MODIFY `student_no` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `student_no` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables
