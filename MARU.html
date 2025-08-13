@@ -1,17 +1,16 @@
 <!DOCTYPE html>
-<h2>Martial Arts R Us (Maru)</h2>
-<h3>New Student Enrollment</h3>
+<html>
+    <head>
+        <link rel="stylesheet" href="maru.css">
+    </head>
+    <h1 class="heading">Martial Arts R Us (MARU)</h1>
+    <p>Welcome to the Martial Arts R Us (MARU) webpage! We offer a variety of classes during the week. We offer beginner, intermediate, and advanced classes.
+    </p>
 
-<body>
-    <form action="enroll.php" method="post">
-        <label for="fname">First name:</label><br>
-        <input type="text" id="fname" name="fname"><br>
-        <label for="lname">Last name:</label><br>
-        <input type="text" id="lname" name="lname"><br>
-        <label for="dob">DOB:</label>
-        <input type="text" id="dob" name="dob" placeholder="yyyy-mm-dd">
-        <label for="enrollment">Enrollment Date:</label>
-        <input type="text" id="enrollment" name="enrollment" placeholder="yyyy-mm-dd">
-        <input type="submit" value="Submit">
-    </form>
-</body>
+    <body>
+        <div>
+            <p>Register as a student or an instructor today!</p>
+            <button type="button" class="register" onclick="document.location='./Enroll.html'">Register</button>
+        </div>
+    </body>
+</html>

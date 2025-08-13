@@ -1,0 +1,17 @@
+.heading {
+    text-align:center;
+    font-size: 60px;
+    background-color: brown;
+    height: 200px;
+}
+
+.register {
+    background-color: brown;
+    height: 50px;
+    width: 100px;
+}
+
+.register :hover {
+    background-color: bisque;
+    opacity: 0.2;
+}
