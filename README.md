@@ -1,3 +1,61 @@
+# [Martial Arts R US] 
+
+A back/front end implementation of a Martial Arts administration database
+
+---
+
+## 📝 Overview
+
+Here is a breakdown of file structure and recreating our results
+
+---
+
+## 📂 File Structure
+
+Here’s a breakdown of the most important files and directories in this project.
+
+* **`martial_arts.sql`**: The backend of our database, all SQL. The tables, procedures, and triggers.
+* **`DVWA-DataDictionary.pdf`**: Picture of Data Dictionary.
+* **`DVWA-RelationalDiagram.pdf`**: Picture of Relational Diagram.
+* **`erd_DVWA.html`**: The mermaid of our ERD.
+* **`Business Rules.txt`**: Business Rules of the Database.
+* **`*.php`**: The front-end php files used for the website.
+* **`README.md`**: The file you are currently reading.
+
+---
+
+## ⚙️ Getting Started
+
+Follow these instructions to get a copy of the project up and running on your local machine.
+
+### Prerequisites
+
+List any software, libraries, or tools that users need to install before they can use your project.
+
+```bash
+Follow the XAMPP Setup from begining of semester
+```
+
+### Installation
+
+Provide a step-by-step guide on how to set up the development environment.
+
+1.  **Create a Database called MARU**
+2.  **Import the martial_arts.sql database**
+3.  **Setup Database configuration in db.php**
+---
+
+## ▶️ How to Run the Code
+
+Here are the commands to execute the project after installation.
+
+**To access the front-end:**
+
+```bash
+Once XAMPP is up and running, go to localhost/csi3450-s25-dvwa-project/index.php
+```
+
+
 Chapter 5: Page 184 – Case P8:
 
 “Martial Arts R Us” (MARU) needs a database. MARU is a martial arts school with hundreds of students. The database must keep track of all of the classes that are offered, who is assigned to teach each class, and which students attend each class. Also, it is important to track the progress of each student as they advance. Create a complete Crow’s Foot ERD for these requirements:
@@ -19,59 +77,3 @@ Chapter 5: Page 184 – Case P8:
 •	Each student holds a rank in the martial arts. The rank name, belt color, and rank requirements are stored. Most ranks have numerous rank requirements, but each requirement is associated with only one particular rank. All ranks except white belt have at least one requirement.
 
 •	A given rank may be held by many students. While it is customary to think of a student as having a single rank, it is necessary to track each student’s progress through the ranks. Therefore, every rank that a student attains is kept in the system. New students joining the school are automatically given the rank of white belt. The date that a student is awarded each rank should be kept in the system. All ranks have at least one student who has achieved that rank at some time.
-
-Business Rules:
-
-1. Students are uniquely identified by a Student No and store Name, Date of Birth, Join Date.
-
-2. Instructors are a specialized subset of students; they inherit the student attributes plus Instructor Start Date and Status ( Compensated │ Volunteer ).
-
-3. A student may be an instructor, but an instructor must already exist as a student.
-
-4. Every Class has one and only one Assigned Instructor; an instructor can be assigned to zero-many classes.
-
-5. A class is defined by Level, Day-of-Week, Start Time, Location (room) and is offered repeatedly over time.
-
-6. Each calendar Class Meeting (the individual occurrence of a class) is linked to exactly one class and occurs on a specific Date.
-
-7. Attendance must be tracked for every student and every class meeting. A student can attend many class meetings; a class meeting can be attended by many students (possibly zero).
-
-8. Besides the assigned instructor, any number of other instructors may serve as Assistant Instructors at a class meeting.
-
-9. Each instructor present at a meeting has exactly one Role (Head or Assistant). Every meeting has at least the Head (the assigned instructor).
-
-10. The school recognises multiple Ranks, each with Rank Name, Belt Color, and one-many Rank Requirements. White belt may have none; all other ranks have at least one requirement.
-
-11. A student starts with White Belt on their join date and may earn many ranks over time.
-
-12. For every rank a student earns, the Date Awarded is recorded. Every rank has been awarded to at least one student at some time.
-
-Entities:
-
-Student, Instructor, Class, Rank
-
-Attributes:
-
-Student Number (int stu_num, Primary Key)
-Student Name (varchar fname, varchar lname)
-Student Date of Birth (date DOB)
-Student’s Join/Enrollment Date (date enroll_date)
-Student Rank (varchar stu_rank)
-
-Instructor Number (int instr_num, Primary Key)
-Instructor’s Hire Date (date hire_date)
-Instructor Status (varchar instr_status)
-
-Class Day (varchar class_day)
-Class Time (time class_time)
-Class Room (varchar class_room)
-Class’ Head Instructor (int head_instr_num, Foreign Key)
-Class’ Assistant Instructor (int asst_instr_num, Foreign Key)
-Class Level (varchar class_level)
-Class’ Attendance Numbers (int attendance_num)
-
-Rank Name (varchar rank_name)
-Rank Belt Color (varchar rank_belt_color)
-Rank Requirements (varchar rank_requirement)
-Rank Holder (int stu_rank_holder, Foreign Key)
-Rank Date Achieved (date date_rank_achieved)
