@@ -30,8 +30,6 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 ### Prerequisites
 
-List any software, libraries, or tools that users need to install before they can use your project.
-
 ```bash
 Follow the XAMPP Setup from begining of semester
 ```
@@ -55,6 +53,8 @@ Here are the commands to execute the project after installation.
 Once XAMPP is up and running, go to localhost/csi3450-s25-dvwa-project/index.php
 ```
 
+
+## Original Problem from Textbook
 
 Chapter 5: Page 184 – Case P8:
 
