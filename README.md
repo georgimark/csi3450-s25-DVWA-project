@@ -22,21 +22,29 @@ Chapter 5: Page 184 – Case P8:
 
 Business Rules:
 
-•	A student may attend many class meetings.
+1. Students are uniquely identified by a Student No and store Name, Date of Birth, Join Date.
 
-•	An instructor may teach many classes.
+2. Instructors are a specialized subset of students; they inherit the student attributes plus Instructor Start Date and Status ( Compensated │ Volunteer ).
 
-•	A class may be attended by many students.
+3. A student may be an instructor, but an instructor must already exist as a student.
 
-•	Each class has only one assigned instructor.
+4. Every Class has one and only one Assigned Instructor; an instructor can be assigned to zero-many classes.
 
-•	A class may have many assistant instructors.
+5. A class is defined by Level, Day-of-Week, Start Time, Location (room) and is offered repeatedly over time.
 
-•	A rank may have many requirements.
+6. Each calendar Class Meeting (the individual occurrence of a class) is linked to exactly one class and occurs on a specific Date.
 
-•	A rank may be held by many students.
+7. Attendance must be tracked for every student and every class meeting. A student can attend many class meetings; a class meeting can be attended by many students (possibly zero).
 
-•	Each rank has at least one student that has achieved that rank.
+8. Besides the assigned instructor, any number of other instructors may serve as Assistant Instructors at a class meeting.
+
+9. Each instructor present at a meeting has exactly one Role (Head or Assistant). Every meeting has at least the Head (the assigned instructor).
+
+10. The school recognises multiple Ranks, each with Rank Name, Belt Color, and one-many Rank Requirements. White belt may have none; all other ranks have at least one requirement.
+
+11. A student starts with White Belt on their join date and may earn many ranks over time.
+
+12. For every rank a student earns, the Date Awarded is recorded. Every rank has been awarded to at least one student at some time.
 
 Entities:
 
